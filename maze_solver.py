@@ -4,7 +4,7 @@ from typing import List, Callable, Optional
 
 
 class Maze:
-    def __init__(self, shape: tuple = (100, 100), path_prob: float = 0.6):
+    def __init__(self, shape: tuple = (100, 100), path_prob: float = 0.7):
         self.shape = np.array(shape)
         self.wall = 1
         self.not_wall = 0
@@ -33,15 +33,18 @@ class Maze:
         for solver in self.solvers:
             solver.update_position(self.maze)
 
-    def save_as_image(self, path: list, output_dir: str) -> None:
+    def save_as_image(self, path: list, output_dir: str, considered_nodes:list=[]) -> None:
         plt.imshow(np.array(self.maze)*(-1), cmap='gray')
         plt.plot(path[0][1], path[0][0], 'ro')
         current_pos = path[0]
+        for node in considered_nodes:
+            plt.plot(node[1],  node[0],'o',alpha=0.5, color='0.75', markersize=4)
         for pos in path:
-            plt.plot(pos[1],  pos[0],'ro')
+            plt.plot(pos[1],  pos[0],'ro', alpha=0.5,)
             plt.plot([current_pos[1], pos[1]], [current_pos[0], pos[0]], 'r-')
             current_pos = pos
         plt.plot(path[-1][1], path[-1][0], 'go')
+        plt.plot(path[0][1], path[0][0], 'bo')
         plt.axis('off')
         filename = f"{output_dir}/maze_path.png"
         plt.savefig(filename, bbox_inches='tight')
@@ -60,8 +63,9 @@ class Solver:
 
 
 class AStarSolver:
-    def __init__(self, heuristic: Callable[[np.ndarray, np.ndarray], float]):
+    def __init__(self, heuristic: Callable[[np.ndarray, np.ndarray], float], diagonal_walk_enabled=True):
         self.heuristic = heuristic
+        self.diagonal_walk_enabled = diagonal_walk_enabled
         b = np.sqrt(2)
         self.dist = np.array([[b, 1, b],
                               [1, 0, 1],
@@ -83,6 +87,8 @@ class AStarSolver:
                      [+1,-1],   # 6    | 3  8  6 |
                      [ 0,+1],   # 7
                      [ 0,-1]]   # 8
+        if not self.diagonal_walk_enabled:
+            neighbors = [neighbors[idx-1] for idx in [2,7,5,8]]
         # TODO: Implement full A* logic
         while self.open:
             current = self.open.pop()   # Pick node current from open list with the lowest f(n)
@@ -114,7 +120,8 @@ class AStarSolver:
                     self.open.append(new_node)
             self.open.sort(key=lambda x:x[0]+x[1], reverse=True)
 
-        raise('no solution for maze: ' + str(maze.maze))
+        return []
+        return('no solution for maze: ' + str(maze.maze))
 
         pass
 
@@ -129,7 +136,8 @@ class AStarSolver:
             current_pos = origin_dict[str(current_pos)]
         path.append(current_pos)
         path.reverse()
-        return path
+        considered_nodes = [node[2].tolist() for node in self.closed]
+        return path, considered_nodes
 
 
 def manhattan(p1: np.ndarray, p2: np.ndarray) -> float:
@@ -139,12 +147,15 @@ def auclidean_dist(p1: np.ndarray, p2: np.ndarray) -> float:
     return float(np.sum((p1 - p2)**2)**.5)
 
 def main():
-    maze = Maze(shape=(30, 30))
+    path_prob = 0.7
+    diagonal_walk_enabled = False
+    maze_shape = (30, 30)
 
-    solver = AStarSolver(heuristic=auclidean_dist)
-    path = solver.solve(maze, maze.init_pos, maze.end_pos)
+    maze = Maze(shape=maze_shape,path_prob=path_prob)
+    solver = AStarSolver(heuristic=auclidean_dist, diagonal_walk_enabled=diagonal_walk_enabled)
+    path, considered_nodes = solver.solve(maze, maze.init_pos, maze.end_pos)
 
-    maze.save_as_image(path, output_dir="./outputs")
+    maze.save_as_image(path, output_dir="./outputs", considered_nodes=considered_nodes)
 
 
 if __name__ == "__main__":
