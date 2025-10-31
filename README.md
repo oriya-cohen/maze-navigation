@@ -2,9 +2,9 @@
 
 The classical maze navigation problem example solution with A* algorithm
 
- green dot - start
+ green dot - goal
  
- blue dot  - goal
+ blue dot  - start
  
  gray dots - all points considered
  
