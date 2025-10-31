@@ -33,7 +33,7 @@ class Maze:
         for solver in self.solvers:
             solver.update_position(self.maze)
 
-    def save_as_image(self, path: list, output_dir: str, considered_nodes:list=[]) -> None:
+    def save_as_image(self, path: list, output_dir: str, considered_nodes:list=[], diagonal_walk_enabled:bool=True) -> None:
         plt.imshow(np.array(self.maze)*(-1), cmap='gray')
         plt.plot(path[0][1], path[0][0], 'ro')
         current_pos = path[0]
@@ -47,6 +47,7 @@ class Maze:
         plt.plot(path[0][1], path[0][0], 'bo')
         plt.axis('off')
         filename = f"{output_dir}/maze_path.png"
+        if diagonal_walk_enabled: filename=filename.replace('maze_path.png','maze_diagonal_path.png')
         plt.savefig(filename, bbox_inches='tight')
         plt.close()
 
@@ -148,14 +149,14 @@ def auclidean_dist(p1: np.ndarray, p2: np.ndarray) -> float:
 
 def main():
     path_prob = 0.7
-    diagonal_walk_enabled = False
+    diagonal_walk_enabled = True
     maze_shape = (30, 30)
 
     maze = Maze(shape=maze_shape,path_prob=path_prob)
     solver = AStarSolver(heuristic=auclidean_dist, diagonal_walk_enabled=diagonal_walk_enabled)
     path, considered_nodes = solver.solve(maze, maze.init_pos, maze.end_pos)
 
-    maze.save_as_image(path, output_dir="./outputs", considered_nodes=considered_nodes)
+    maze.save_as_image(path, output_dir="./outputs", considered_nodes=considered_nodes, diagonal_walk_enabled=diagonal_walk_enabled)
 
 
 if __name__ == "__main__":
